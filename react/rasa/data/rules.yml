@@ -1,0 +1,40 @@
+version: "3.1"
+
+rules:
+  - rule: Say 'I am a bot' anytime the user challenges
+    steps:
+      - intent: bot_challenge
+      - action: utter_iamabot
+
+  - rule: Fallback to human handoff
+    steps:
+      - intent: nlu_fallback
+      - action: action_default_fallback
+
+  - rule: Resume bot after human handoff
+    steps:
+      - intent: resume
+      - action: action_check_resume
+
+  # - rule: Intercept all messages during handoff
+  #   condition:
+  #     - slot_was_set:
+  #         - human_handoff: true
+  #   steps:
+  #     - action: action_check_resume
+
+  # - rule: Intercept affirmations during handoff
+  #   condition:
+  #     - slot_was_set:
+  #         - human_handoff: true
+  #   steps:
+  #     - intent: affirm
+  #     - action: action_check_resume
+
+  # - rule: Intercept any other intent during handoff
+  #   condition:
+  #     - slot_was_set:
+  #         - human_handoff: true
+  #   steps:
+  #     - intent: nlu_fallback # catch-all for anything else
+  #     - action: action_check_resume

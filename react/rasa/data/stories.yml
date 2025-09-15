@@ -1,0 +1,36 @@
+version: "3.1"
+
+stories:
+  - story: weather inquiry
+    steps:
+      - intent: greet
+      - action: utter_greet
+      - intent: weather
+      - action: utter_weather_response
+      - intent: thanks
+      - action: utter_goodbye
+
+  - story: weather inquiry with location
+    steps:
+      - intent: greet
+      - action: utter_greet
+      - intent: weather_for_location
+      - action: action_weather_location
+      - intent: thanks
+      - action: utter_goodbye
+
+  - story: user accepts human handoff
+    steps:
+      - intent: affirm
+      - action: action_human_handoff
+
+  - story: user declines human handoff
+    steps:
+      - intent: deny
+      - action: utter_continue
+
+  - story: user ask for live agent
+    steps:
+      - intent: humanhandoff
+      - action: action_human_handoff
+

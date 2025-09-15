@@ -1,0 +1,57 @@
+services:
+  mongodb:
+    image: mongo:6.0
+    container_name: mongodb
+    restart: unless-stopped
+    ports:
+      - "27017:27017"
+    volumes:
+      - mongodb_data:/data/db
+
+  mcp_service:
+    build:
+      context: .
+      dockerfile: Dockerfile.mcp
+    container_name: mcp-service
+    ports:
+      - "5003:5003"
+    depends_on:
+      - mongodb_mcp_server
+    environment:
+      - MCP_SERVER_URL=ws://mongodb-mcp:3000
+
+  mongodb_mcp_server:
+    image: mongodb/mongodb-mcp-server:latest
+    container_name: mongodb-mcp
+    environment:
+      MDB_MCP_CONNECTION_STRING: "mongodb://mongodb:27017/mcp_database"
+      MDB_MCP_READ_ONLY: "false"
+    depends_on:
+      - mongodb
+    ports:
+      - "3000:3000"
+
+  rasa:
+    image: rasa/rasa:latest
+    container_name: rasa
+    command: ["rasa", "run", "--enable-api", "--cors", "*"]
+    volumes:
+      - ./rasa:/app
+    ports:
+      - "5005:5005"
+    depends_on:
+      - mongodb_mcp_server
+
+  action-server:                  # optional separate action server
+    image: rasa/rasa-sdk:latest
+    container_name: rasa-actions
+    volumes:
+      - ./actions:/app/actions
+    ports:
+      - "5055:5055"
+    depends_on:
+      - rasa
+      - mongodb_mcp_server
+
+volumes:
+  mongodb_data:
