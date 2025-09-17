@@ -195,7 +195,7 @@ def handle_message(data):
     
 
 
-    # 3. Check for human handoff keywords first, then check for Rasa intents, then try Llama, fallback to Rasa
+    # 3. Check for human handoff keywords first, then try Llama, fallback to Rasa
     
     # Keywords that should trigger human handoff
     handoff_keywords = [
@@ -207,9 +207,6 @@ def handle_message(data):
     user_text_lower = user_text.lower()
     is_handoff_request = any(keyword in user_text_lower for keyword in handoff_keywords)
     
-    # Check for Rasa intents (messages starting with /)
-    is_rasa_intent = user_text.startswith("/")
-    
     if is_handoff_request:
         print("🔄 Human handoff request detected, triggering handoff directly")
         # Directly trigger handoff without relying on Rasa NLU
@@ -220,20 +217,6 @@ def handle_message(data):
             }
         ]
         print("Direct handoff response:", bot_message)
-    elif is_rasa_intent:
-        print(f"🎯 Rasa intent detected: {user_text}, sending directly to Rasa")
-        try:
-            # Send directly to Rasa for intent processing
-            rasa_response = requests.post(RASA_API_URL, json={"sender": sender_id, "message": user_text})
-            if rasa_response.status_code == 200:
-                bot_message = rasa_response.json()
-                print("Rasa intent response:", bot_message)
-            else:
-                raise ConnectionError(f"Rasa server returned status code: {rasa_response.status_code}")
-        except Exception as rasa_error:
-            print(f"Error with Rasa service: {str(rasa_error)}")
-            emit("bot_response", {"sender": "bot", "text": "I'm having trouble processing your request. Please try again later."}, room=username)
-            return
     else:
         # For non-handoff requests, try Llama first, then fallback to Rasa
         try:
@@ -246,16 +229,18 @@ def handle_message(data):
                     
                     # Check if Llama suggests handoff due to insufficient data
                     if llama_data.get('suggest_handoff'):
-                        print("🔄 Llama suggests handoff - no relevant data found, falling back to Rasa")
-                        # Fall back to Rasa to trigger action_default_fallback with buttons
-                        raise ValueError("Llama suggests handoff, triggering Rasa fallback for proper buttons")
+                        print("🔄 Llama suggests handoff - no relevant data found")
+                        bot_message = [
+                            {
+                                "text": llama_data['content'],
+                                "json_message": {"handoff": True, "user": sender_id}
+                            }
+                        ]
+                        print("Llama handoff suggestion response:", bot_message)
                     else:
                         # Additional check: detect if Llama response indicates no database info
                         no_data_phrases = [
                             "do not have any information about",
-                            "don't have any information about",
-                            "do not have any relevant data",
-                            "don't have any relevant data",
                             "unable to find any information about", 
                             "does not contain information about",
                             "does not contain any information",
@@ -271,9 +256,7 @@ def handle_message(data):
                             "no connection to employees",
                             "I apologize, but",
                             "provide more context",
-                            "clarify what you are trying to ask",
-                            "no relevant data",
-                            "no information about"
+                            "clarify what you are trying to ask"
                         ]
                         
                         llama_lower = llama_content.lower()

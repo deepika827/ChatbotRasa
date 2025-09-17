@@ -121,22 +121,6 @@ def chat():
 
     user_message = user_input["message"]
 
-    # Check for greetings first
-    greeting_keywords = [
-        "hi", "hello", "hey", "good morning", "good afternoon", "good evening",
-        "greetings", "howdy", "hiya", "what's up", "sup"
-    ]
-    
-    user_lower = user_message.lower().strip()
-    is_greeting = any(greeting in user_lower for greeting in greeting_keywords) or user_lower in ["hi", "hello", "hey"]
-    
-    if is_greeting:
-        return jsonify({
-            "success": True,
-            "content": "Hello! How can I assist you today?",
-            "query_type": "greeting"
-        })
-
     # Step 1: Check if this is a conversation history query
     is_conversation_query = detect_conversation_query(user_message)
     
@@ -166,7 +150,7 @@ def chat():
     # Step 4: Build enhanced Llama prompt
     if is_conversation_query:
         prompt = f"""
-You are a professional database assistant. Answer questions directly and factually using only the provided data.
+You are a database query assistant for conversation history. You can ONLY answer using data from the provided databases.
 
 User question: "{user_message}"
 
@@ -176,23 +160,21 @@ CONVERSATION HISTORY DATABASE:
 EMPLOYEE DATABASE:
 {json.dumps(employees_data, indent=2)}
 
-INSTRUCTIONS:
-1. Answer the question directly and factually using ONLY the data provided above
-2. Do NOT make assumptions about what the user wants to do
-3. Do NOT include raw database entries, IDs, or technical details in your response
-4. Be professional and concise
-5. If no relevant data exists, respond with exactly: "NO_RELEVANT_DATA_FOUND"
-6. Do NOT use external knowledge - only the provided databases
-7. Do NOT add unnecessary conversational elements or assumptions
+CRITICAL RULES:
+1. You can ONLY use information from these two databases above
+2. Do NOT use external knowledge or general information
+3. If the databases do not contain the exact information requested, you MUST respond with exactly: "NO_RELEVANT_DATA_FOUND"
+4. Do NOT provide helpful suggestions or general advice
+5. ONLY search the conversation history and employee data provided
 
-Example good responses:
-- "The HR Manager is Alice Johnson."
-- "John Smith works in the Engineering department as a Software Developer."
-- "There are 3 employees in the Marketing department: Sarah, Mike, and Lisa."
+Examples:
+- Question about past conversations in the database → Answer using conversation data
+- Question about employees mentioned in conversations → Use both databases
+- Question about topics not in the conversation history → Respond: "NO_RELEVANT_DATA_FOUND"
 """
     else:
         prompt = f"""
-You are a professional database assistant. Answer questions directly and factually using only the provided data.
+You are a database query assistant. You can ONLY answer using data from the provided databases.
 
 User question: "{user_message}"
 
@@ -202,31 +184,19 @@ Employee Database:
 Chat History Database:
 {json.dumps(conversations_data, indent=2)}
 
-INSTRUCTIONS:
-1. Answer the question directly and factually using ONLY the data provided above
-2. Do NOT make assumptions about what the user wants to do
-3. Do NOT include raw database entries, IDs, or technical details in your response
-4. Be professional and concise
-5. For questions about employees/company that have no data: respond with exactly "NO_RELEVANT_DATA_FOUND"
-6. For questions about anything unrelated to employees/company: respond with exactly "NO_RELEVANT_DATA_FOUND"
-7. Do NOT use external knowledge - only the provided databases
-8. Do NOT provide suggestions about external sources or websites
-9. Do NOT add unnecessary conversational elements or assumptions
+CRITICAL RULES:
+1. You can ONLY use information from these two databases above
+2. Do NOT use external knowledge, general information, or suggestions
+3. If the databases do not contain the exact information requested, you MUST respond with exactly: "NO_RELEVANT_DATA_FOUND"
+4. Do NOT provide helpful suggestions, external resources, or general advice
+5. Do NOT say "I recommend checking..." or "you can find this information..."
+6. ONLY use the database content provided above
 
-CRITICAL: If the user asks about presidents, politics, weather, cooking, shopping, flights, or any general knowledge questions, you MUST respond with exactly: "NO_RELEVANT_DATA_FOUND" - do not explain or elaborate.
-
-Example good responses:
-- "The HR Manager is Alice Johnson."
-- "John Smith works in the Engineering department as a Software Developer."
-- "There are 3 employees in the Marketing department: Sarah, Mike, and Lisa."
-
-Example irrelevant questions that should return "NO_RELEVANT_DATA_FOUND":
-- Flight booking, travel reservations
-- Weather information
-- Cooking recipes
-- Shopping recommendations
-- General knowledge questions
-- Technical support for non-company systems
+Examples:
+- Question about employees in the database → Answer using employee data
+- Question about conversations in the database → Answer using chat history  
+- Question about weather, politics, cooking, etc. → Respond: "NO_RELEVANT_DATA_FOUND"
+- Question about people not in employee database → Respond: "NO_RELEVANT_DATA_FOUND"
 """
 
     llama_payload = {
@@ -246,9 +216,6 @@ Example irrelevant questions that should return "NO_RELEVANT_DATA_FOUND":
         no_data_indicators = [
             "NO_RELEVANT_DATA_FOUND",
             "do not have any information about",
-            "don't have any information about",
-            "do not have any relevant data",
-            "don't have any relevant data",
             "does not contain information about",
             "database does not include",
             "not included in the database",
@@ -256,19 +223,7 @@ Example irrelevant questions that should return "NO_RELEVANT_DATA_FOUND":
             "checking a reliable news source",
             "official government website",
             "I suggest checking",
-            "I recommend",
-            "I'm not able to",
-            "I cannot",
-            "I can't",
-            "not able to",
-            "unable to",
-            "don't have the ability",
-            "outside of my capabilities",
-            "beyond my scope",
-            "no relevant data",
-            "no information about",
-            "not in my database",
-            "not available in my database"
+            "I recommend"
         ]
         
         # Check if any indicator of insufficient data is present
@@ -282,7 +237,7 @@ Example irrelevant questions that should return "NO_RELEVANT_DATA_FOUND":
             print("🎯 TRIGGERING HANDOFF SUGGESTION!")
             return jsonify({
                 "success": True,
-                "content": "I apologize, but I don't have information about that in my database. Would you like to talk to a live agent who can help you with more detailed information?",
+                "content": "I don't have specific information about that in my database. Would you like to talk to a live agent who can help you with more detailed information?",
                 "suggest_handoff": True,
                 "reason": "Llama could not find relevant data in database",
                 "query_type": "no_relevant_data"
