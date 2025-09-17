@@ -1,0 +1,13 @@
+{
+  "0": "affirm",
+  "1": "bot_challenge",
+  "2": "deny",
+  "3": "goodbye",
+  "4": "greet",
+  "5": "humanhandoff",
+  "6": "query_database",
+  "7": "resume",
+  "8": "thanks",
+  "9": "weather",
+  "10": "weather_for_location"
+}

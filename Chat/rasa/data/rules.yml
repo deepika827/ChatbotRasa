@@ -1,0 +1,22 @@
+version: "3.1"
+
+rules:
+  - rule: Say 'I am a bot' anytime the user challenges
+    steps:
+      - intent: bot_challenge
+      - action: utter_iamabot
+
+  - rule: Human handoff request
+    steps:
+      - intent: humanhandoff
+      - action: action_human_handoff
+
+  - rule: Fallback to human handoff
+    steps:
+      - intent: nlu_fallback
+      - action: action_default_fallback
+
+  - rule: Resume bot after human handoff
+    steps:
+      - intent: resume
+      - action: action_check_resume

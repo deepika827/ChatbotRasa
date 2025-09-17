@@ -1,0 +1,63 @@
+{
+  "type": "MaxHistoryTrackerFeaturizer",
+  "state_featurizer": {
+    "action_texts": [],
+    "entity_tag_specs": [],
+    "feature_states": {
+      "intent": {
+        "affirm": 0,
+        "back": 1,
+        "bot_challenge": 2,
+        "deny": 3,
+        "goodbye": 4,
+        "greet": 5,
+        "humanhandoff": 6,
+        "location": 7,
+        "nlu_fallback": 8,
+        "out_of_scope": 9,
+        "restart": 10,
+        "resume": 11,
+        "session_start": 12,
+        "thanks": 13,
+        "weather": 14,
+        "weather_for_location": 15
+      },
+      "action_name": {
+        "action_listen": 0,
+        "action_restart": 1,
+        "action_session_start": 2,
+        "action_default_fallback": 3,
+        "action_deactivate_loop": 4,
+        "action_revert_fallback_events": 5,
+        "action_default_ask_affirmation": 6,
+        "action_default_ask_rephrase": 7,
+        "action_two_stage_fallback": 8,
+        "action_unlikely_intent": 9,
+        "action_back": 10,
+        "...": 11,
+        "action_extract_slots": 12,
+        "action_weather_location": 13,
+        "action_human_handoff": 14,
+        "action_check_resume": 15,
+        "action_reset_handoff_slot": 16,
+        "utter_ask_human_help": 17,
+        "utter_continue": 18,
+        "utter_goodbye": 19,
+        "utter_greet": 20,
+        "utter_humanhandoff": 21,
+        "utter_iamabot": 22,
+        "utter_weather_response": 23
+      },
+      "entities": {
+        "location": 0
+      },
+      "slots": {
+        "handoff_offered_0": 0,
+        "handoff_offered_1": 1
+      },
+      "active_loop": {}
+    }
+  },
+  "remove_duplicates": true,
+  "max_history": 5
+}
